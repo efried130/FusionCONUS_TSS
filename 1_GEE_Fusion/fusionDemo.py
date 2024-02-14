@@ -10,6 +10,8 @@ the main script.
 
 Note that this script is for any images 2000-2023
 Note that you import geemap, which can be installed at: https://geemap.org/installation/
+Note that some date ranges do not return enough resolved water pixels, there are no images between pairs after filtering, or
+user memory limit can be exceeeded during export etc.
 
 General outline:
     1. Define global vars
