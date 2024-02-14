@@ -350,6 +350,11 @@ def fusionExport(fcList, dates, generalFilePath, identifier, siteNum):
 #Global Variables and Collections
 #################################
 
+# define sites of interest
+#Example: https://code.earthengine.google.com/?asset=projects/fusion-353005/assets/fusionSites2/fusionSitesAll_01232024
+conusSites = ee.FeatureCollection('yourSites').select(['SiteID']) #Select minimum site info
+
+
 # define special start and end dates for collections
 startDate_ls7 = ee.String('2000-01-01')
 endDate_ls7 = ee.String('2003-05-31'); # End date of ls7 full images
@@ -438,10 +443,8 @@ coverClasses = 6
 #Batching and Function Call
 ##########################################
 
-#Call in sites
-#Example: https://code.earthengine.google.com/?asset=projects/fusion-353005/assets/fusionSites2/fusionSitesAll_01232024
-conusSites = ee.FeatureCollection('yourSites').select['SiteID'].slice(0,50) #I sliced this to a smaller chunk for an example
-sitesList = conusSites.toList(8000) #convert to list for scaling
+#Sites to list (called from global vars above)
+sitesList = conusSites.toList(8000).slice(0,50) #convert to list for scaling
 
 #Where to save your csv files
 generalFilePath = '/yourPathtoFolder/'
