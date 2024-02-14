@@ -3,7 +3,7 @@ Use imagery information from Landsat and Sentinel-2 to 'teach' MODIS 30 m resolu
 
 # **OVERVIEW**
 
-This manuscript broadly can be divided into five phases: data collection and cleaning from the Water Quality Portal (WQP), processing Landsat-5,7,8,9 and Sentinel-2 and Fusion imagery, assigning available matchups between the previous two for training, model training and validation, and lastly the resulting reflectance/TSS datasets. All scripts are executed using python except for the WQP phase, which uses R due to the capabilities of the USGS dataRetrieval package.
+This manuscript broadly can be divided into three phases: data collection and cleaning from the Water Quality Portal (WQP), processing Landsat-5,7,8,9 and Sentinel-2 and Fusion imagery, and lastly model matchup prep, training, and validation. All resulting reflectance/TSS datasets are available on Zenodo. All scripts are executed using python except for the WQP phase, which uses R due to the capabilities of the USGS dataRetrieval package.
 
 ## **FILE DESCRIPTIONS**
 
@@ -29,13 +29,10 @@ GEE_ImageFusion_Fxns - Module containing three scripts (Nietupski et al. 2021). 
 
 **fusionDemo.py -** Script with highly customizable scaling functions and an example of the workflow needed to use all the GEE_ImageFusion_Fxns module.
 
-### 2_matchups
+
+### 2_model
 
 **matchupsCONUS.ipynb -** A jupyter notebook that collates and matches +/- 1 day WQP measurements to an LS2 or Fusion image, cleans the data, and prepares the matchups for model training.
-
-**AllMatchups_2000-2023_RFpreprocessed.csv -** The final training dataset used in the Random Forest models.
-
-### 3_model
 
 **0_RFmodelFunctions.py -** All functions needed to run the RF model with reflectance-TSS matchup data including preprocessing, formatting, model training, skill score export, predictions, plots, and evaluation across 100 iterations. Formatted to input all model iterations as separate files.
 
@@ -45,10 +42,3 @@ GEE_ImageFusion_Fxns - Module containing three scripts (Nietupski et al. 2021). 
 
 **RFmodels_combine.py** - Combine all 100 iterations to single output with all data sources (matchup, wqp, predictions in one netCDF) for further analysis.
 
-### 4_resultData
-
-**fusion_reflectance_raw.csv -** All raw median reflectance, standard deviation, pixel count, date, and siteID data for fusion images generated between 2000-2023.
-
-**LS2_reflectance_raw.csv -** All raw median reflectance, standard deviation, pixel count, date, and siteID data for LS2 images generated between 2000-2023.
-
-**fusionSed_all.csv -** All TSS estimates from the RF model including matchup LS2, matchup Fusion, predicted LS2, and predicted Fusion.
