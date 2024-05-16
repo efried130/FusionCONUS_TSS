@@ -465,7 +465,6 @@ fileIdentifier = 'TEST'
 
 # Generate list of overlapping date ranges
 overlappingDates = overlappingDateRanges(start_date=start_date, end_date=end_date, time_span=time_span, overlap=overlap)
-print(overlapping_ranges)
 
 # Split the list into chunks
 chunks = batchSites(siteList=sitesList, chunkSize = batchSiteNum)
