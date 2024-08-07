@@ -7,34 +7,36 @@ runs the random forest, and predicts all unmatched LS2 and fusion images. Return
 
 I recommend creating a file structure within this directory such as: 
 
-project
-│   2_model
-│
-      └───modelPreds_fusion
-            │   │   file011.csv
-            │   │   file012.csv
-            │   │   ...
-            
-      └───modelPreds_ls2
-            │       │   file111.csv
-            │       │   file112.csv
-            │       │   ...
-      └───models
-            │       │   file111.joblib
-            │       │   file112.joblib
-            │       │   ...
-      └───modelScores
-            │       │   file111.csv
-            │       │   file112.csv
-            │       │   ...
-      └───plots
-            │       │   file111.jpg
-            │       │   file112.jpg
-            │       │   ...
-      └───testSets
-            │       │   file111.csv
-            │       │   file112.csv
-            │       │   ...
+
+└───/root (called experiment here)
+      └───test (sub test name)
+            └───stage ('tests' vs 'results' for me)
+            │   2_model (git clone scripts here)
+            └───modelPreds_fusion
+                  │   │   file011.csv
+                  │   │   file012.csv
+                  │   │   ...
+                  
+            └───modelPreds_ls2
+                  │       │   file111.csv
+                  │       │   file112.csv
+                  │       │   ...
+            └───models
+                  │       │   file111.joblib
+                  │       │   file112.joblib
+                  │       │   ...
+            └───modelScores
+                  │       │   file111.csv
+                  │       │   file112.csv
+                  │       │   ...
+            └───plots
+                  │       │   file111.jpg
+                  │       │   file112.jpg
+                  │       │   ...
+            └───testSets
+                  │       │   file111.csv
+                  │       │   file112.csv
+                  │       │   ...
 """
 
 #Master Functions
@@ -83,12 +85,12 @@ thresholdTSSstr = str(thresholdTSS)
 minThresholdTSS = 10
 pixelCount = 3
 
-# #i.e. my file structure to organize the multiple tests
-# experiment = 'allModels2'
-# test = 'conus3000_all'
-# stage = 'tests' #results
-# print('Experiment:', experiment)
-# print('Test:', test)
+#i.e. my file structure to organize the multiple tests. Used to help save mulitple experiments
+experiment = 'allModels2'
+test = 'conus3000_all'
+stage = 'tests' #results
+print('Experiment:', experiment)
+print('Test:', test)
 
 
 
