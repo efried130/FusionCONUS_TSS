@@ -78,12 +78,6 @@ def read_harmonize(file_path, keyword, date, dataSource):
         concatenated_df['tss'] = concatenated_df['tssPred']
         concatenated_df['dataSource'] = dataSource
         
-    if dataSource == 'Test Set':
-        concatenated_df['tssObs'] = concatenated_df['tss']
-        concatenated_df['tss'] = concatenated_df['tssPred']
-        #concatenated_df['dataSource'] = 'Predicted ' + concatenated_df['Matchup'].astype(str)
-        concatenated_df['dataSource'] = dataSource
-
     if dataSource == 'Matchup':
         concatenated_df['dataSource'] = dataSource
         concatenated_df = concatenated_df.drop_duplicates(['SiteID', 'date'])
@@ -105,7 +99,7 @@ def read_harmonize(file_path, keyword, date, dataSource):
 #################
 #Read in datasets
 #################
-experiment = 'directory'
+experiment = 'directory' #see 2_model
 test = 'directory'
 stage = 'directory' 
 
