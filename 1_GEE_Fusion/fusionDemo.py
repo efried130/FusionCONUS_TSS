@@ -9,9 +9,9 @@ use this code as a module, place the GEE_ImageFusion_Fxns directory in the same 
 the main script.
 
 Note that this script is for any images 2000-2023
+Note that it is best to split pulls before and after Landsat 8 launch (2013-03-18) to prevent loading so many image collections at once
 Note that you import geemap, which can be installed at: https://geemap.org/installation/
-Note that some date ranges do not return enough resolved water pixels, there are no images between pairs after filtering, or
-user memory limit can be exceeeded during export etc.
+Note that some date ranges do not return enough resolved water pixels, there are no images between pairs after filtering, or user memory limit can be exceeeded during export etc.
 
 General outline:
     1. Define global vars
@@ -28,6 +28,10 @@ General outline:
         5. Use weights and conversion coefficient to predict images between
         image pairs.
     4. Export images as many small feature collections (.csv files) to local/Cloud storage
+    
+Required Inputs:
+    1. GEE feature collection with the site name entitled 'SiteID' and its associated geometry
+    2. Modify generalFilePath and fileIdentifier variables for export
 
 """
 
@@ -35,8 +39,8 @@ General outline:
 #Imports
 ################################
 import ee
-#ee.Authenticate()
-ee.Initialize()
+ee.Authenticate()
+ee.Initialize(project='yourProject')
 import geemap
 import os
 import time
@@ -128,7 +132,7 @@ def sites_processing(startDate, endDate):
                 
         region = ee.Feature(site).geometry()
 
-        sortedImages = getPaired(startDate, endDate, ls89, ls57, 
+        sortedImages = getPaired(startDate, endDate, ls789, ls57, 
               s2_sr_col, CLOUD_FILTER,
               landsatBands57, landsatBands89, bandNamesLandsat,
               S2Bands, bandNamesS2,
@@ -302,7 +306,22 @@ def prediction(subsFeat, site):
                 .filter(ee.Filter.gt('swir1', 0))
 
 
-def fusionExport(fcList, dates, generalFilePath, identifier, siteNum):
+def fusionExport(fcList, dates, generalFilePath, identifier, siteNum, chunkCount):
+    """
+    Generate a csv of median band reflectances per date per site and export
+
+    Parameters:
+    - fcList (list): The site of interest input as a list of features.
+    - dates (tuple): The dates of interest to run fusion over.
+    - generalFilePath (str): File path to save the prepared csv.
+    - identifier (str): The name of the run (i.e. Mississippi_Basin).
+    - siteNum (int): The number of sites in each batch (removes a .getInfo() call).
+    - chunkCount (int): The batch number to prevent file overwrite.
+
+    Returns:
+    - Feature Collection of median band reflectances and their standard deviations for a single date range per site    
+    
+    """
     for d in dates:
         for i in range(0, siteNum): 
                        
@@ -316,9 +335,8 @@ def fusionExport(fcList, dates, generalFilePath, identifier, siteNum):
 
                 #print(results.getInfo())
 
-                filepath =  generalFilePath + str(i) + '_' + startDate + '-' + endDate + '_' + str(identifier) + '.csv'
-                geemap.ee_export_vector(ee_object = ee.FeatureCollection(results), filename = filepath, selectors = ['SiteID','date',
-                                    'blue', 'green', 'red', 'nir', 'swir1', 'swir2', 'pixelCount',
+                filepath =  generalFilePath + str(i) + '_' + str(chunkCount) + '_' + startDate + '-' + endDate + '_' + str(identifier) + '.csv'
+                geemap.ee_export_vector(ee_object = ee.FeatureCollection(results), filename = filepath, selectors = ['SiteID','date','blue', 'green', 'red', 'nir', 'swir1', 'swir2', 'pixelCount',
                                     'blue_sd', 'green_sd', 'red_sd', 'nir_sd', 'swir1_sd', 'swir2_sd'])
             
             except Exception as error:
@@ -353,14 +371,14 @@ def fusionExport(fcList, dates, generalFilePath, identifier, siteNum):
 #################################
 
 # define sites of interest
-#Example: https://code.earthengine.google.com/?asset=projects/fusion-353005/assets/fusionSites2/fusionSitesAll_01232024
-conusSites = ee.FeatureCollection('yourSites').select(['SiteID']) #Select minimum site info
+#Example: 
+#https://code.earthengine.google.com/?asset=projects/fusion-353005/assets/fusionSites2/fusionSitesAll_01232024
 
 
 # define special start and end dates for collections
 startDate_ls7 = ee.String('2000-01-01')
-endDate_ls7 = ee.String('2003-05-31'); # End date of ls7 full images
-endDate_ls7_S2 = ee.String('2021-10-31'); # End date of ls7 images due to Landsat 9
+endDate_ls7 = ee.String('2003-05-31'); # End date of ls7 full images #option 1
+endDate_ls7_S2 = ee.String('2021-10-31'); # End date of ls7 images due to Landsat 9 - option 2
 endDate_ls5 = ee.String('2012-05-05')
 
 # Cloud cover threshold for region (percent)
@@ -372,7 +390,7 @@ road = ee.FeatureCollection("TIGER/2016/Roads")
 
 
 #  landsat band names including qc band for masking
-bandNamesLandsat = ee.List(['blue', 'green', 'red', 'nir', 'swir1', 'swir2', 'QA_PIXEL'])
+bandNamesLandsat = ee.List(['blue', 'green', 'red', 'nir', 'swir1', 'swir2', 'qa'])
 
 landsatBands57 = ee.List(['SR_B1', 'SR_B2', 'SR_B3', 'SR_B4', 'SR_B5', 'SR_B7', 'QA_PIXEL'])
 landsatBands89 = ee.List(['SR_B2', 'SR_B3', 'SR_B4', 'SR_B5', 'SR_B6', 'SR_B7', 'QA_PIXEL'])
@@ -382,10 +400,10 @@ S2Bands = ['B2','B3','B4','B8','B11','B12', 'QA60']
 bandNamesS2 = ['blue','green','red','nir','swir1','swir2', 'QA60']
 
 #  modis band names
-bandNamesModisT = ee.List(['blue', 'green', 'red', 'nir', 'swir1', 'swir2', 'QA_PIXEL'])
+bandNamesModisT = ee.List(['blue', 'green', 'red', 'nir', 'swir1', 'swir2', 'qa'])
 modisBandsT = ee.List(['sur_refl_b03', 'sur_refl_b04', 'sur_refl_b01', 'sur_refl_b02', 'sur_refl_b06', 
                        'sur_refl_b07', 'state_1km'])
-bandNamesModisA = ee.List(['blue', 'green', 'red', 'nir', 'swir1', 'swir2', 'QA_PIXEL'])
+bandNamesModisA = ee.List(['blue', 'green', 'red', 'nir', 'swir1', 'swir2', 'qa'])
 modisBandsA = ee.List(['sur_refl_b03', 'sur_refl_b04', 'sur_refl_b01', 'sur_refl_b02', 'sur_refl_b06', 
                        'sur_refl_b07', 'state_1km'])
 
@@ -415,7 +433,7 @@ ls5 = ee.ImageCollection('LANDSAT/LT05/C02/T1_L2')\
         .filterBounds(conusSites.geometry())\
         .select(landsatBands57, bandNamesLandsat)
 
-ls89 = ee.ImageCollection(ls9.merge(ls8).merge(ls7))
+ls789 = ee.ImageCollection(ls9.merge(ls8).merge(ls7))
 ls57 = ee.ImageCollection(ls5.merge(ls7))
 
 s2_sr_col = ee.ImageCollection("COPERNICUS/S2_SR_HARMONIZED")
@@ -449,18 +467,18 @@ coverClasses = 6
 sitesList = conusSites.toList(8000).slice(0,50) #convert to list for scaling
 
 #Where to save your csv files
-generalFilePath = '/yourPathtoFolder/'
+generalFilePath = '/yourPath/'
 
 
 # Chunk size/Number of sites in each batch, define for computational feasibility
-batchSiteNum = 10
+batchSiteNum = 23
 
 # Example dates:
 start_date = '2021-05-01'
 end_date = '2021-11-15'
 time_span = 60
 overlap = 16
-fileIdentifier = 'TEST'
+fileIdentifier = 'TEST' #prevents file overwrites
 
 
 # Generate list of overlapping date ranges
@@ -470,6 +488,6 @@ overlappingDates = overlappingDateRanges(start_date=start_date, end_date=end_dat
 chunks = batchSites(siteList=sitesList, chunkSize = batchSiteNum)
 
 #CALL FUSION PREDICTION FUNCTIONS AND EXPORT
-for chunk in chunks:
-    fusionExport(fcList = chunk, dates = overlappingDates, generalFilePath = generalFilePath, identifier = fileIdentifier, siteNum = batchSiteNum)
+for count, chunk in enumerate(chunks):
+    fusionExport(fcList = chunk, dates = overlappingDates, generalFilePath = generalFilePath, identifier = fileIdentifier, siteNum = batchSiteNum, chunkCount = count)
 
