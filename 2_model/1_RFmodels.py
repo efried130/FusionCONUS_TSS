@@ -2,8 +2,39 @@
 """
 Author: Elisa Friedmann (efriedmann@umass.edu)
 
-This script calls all dataframe preprocessing and prep functions for the random forest, 
+This script is designed for a batch file that then calls all dataframe preprocessing and prep functions for the random forest, 
 runs the random forest, and predicts all unmatched LS2 and fusion images. Returns a training df, result df, test set dfs, and prediction dfs.
+
+I recommend creating a file structure within this directory such as: 
+
+project
+│   2_model
+│
+      └───modelPreds_fusion
+            │   │   file011.csv
+            │   │   file012.csv
+            │   │   ...
+            
+      └───modelPreds_ls2
+            │       │   file111.csv
+            │       │   file112.csv
+            │       │   ...
+      └───models
+            │       │   file111.joblib
+            │       │   file112.joblib
+            │       │   ...
+      └───modelScores
+            │       │   file111.csv
+            │       │   file112.csv
+            │       │   ...
+      └───plots
+            │       │   file111.jpg
+            │       │   file112.jpg
+            │       │   ...
+      └───testSets
+            │       │   file111.csv
+            │       │   file112.csv
+            │       │   ...
 """
 
 #Master Functions
@@ -49,14 +80,15 @@ train_size = 0.9
 
 thresholdTSS = 3000
 thresholdTSSstr = str(thresholdTSS)
+minThresholdTSS = 10
 pixelCount = 3
 
-experiment = 'allModels2'
-test = 'conus3000_all'
-stage = 'tests' #results
-
-print('Experiment:', experiment)
-print('Test:', test)
+# #i.e. my file structure to organize the multiple tests
+# experiment = 'allModels2'
+# test = 'conus3000_all'
+# stage = 'tests' #results
+# print('Experiment:', experiment)
+# print('Test:', test)
 
 
 
@@ -78,27 +110,23 @@ today = datetime.today().strftime('%Y-%m-%d')
 
 ########### Matchup Training/Testing Data ##############
 # Concatenate all DataFrames into a single DataFrame
-path = "/yourPath/allMatchups_conus/"
+path = "/yourPath/yourMatchups/"
 files = [os.path.join(path, file) for file in os.listdir(path)]
 matchup_df = pd.concat((pd.read_csv(f, engine='python') for f in files if f.endswith('csv')), ignore_index=True)
 
 
 
 # preprocess and clean
-preprocessed_df = preprocess_dataframe(dataframe = matchup_df, thresholdTSS = thresholdTSS, pixelCount = pixelCount, cols_to_log = cols_to_log)
+preprocessed_df = preprocess_dataframe(matchup_df=matchup_df, thresholdTSS=thresholdTSS, minThresholdTSS = minThresholdTSS, pixelCount=pixelCount, cols_to_log=cols_to_log)
 print('# Sites:', (preprocessed_df.SiteID.nunique()))
 
 # prep for rf
 dfs = rf_prep_dataframe(df = preprocessed_df) 
-#print(len(matchup_upArea_dict))
-
-# print(list(dfs.values())[0].columns.values.tolist())
-
 
 ########### LS2 Unmatched Prediction Image Data ##############
 
 # Call in LS2 Unmatched Data
-ls2_raw = pd.read_csv('/yourPath/LS2/LS2NoMatch_2000-2023.csv')
+ls2_raw = pd.read_csv('/yourPath/LS2/LS2Unmatched.csv')
 
 ls2 = preprocess_preds(df = ls2_raw, pixelCount = pixelCount, cols_to_log = cols_to_log)
 print('# LS2 Predictions:', ls2.shape)
@@ -109,7 +137,7 @@ ls2_prep = rf_prep_preds(df = ls2, dataSource = 'LS2')
 ########### Fusion Unmatched Prediction Image Data ##############
 
 # Call in Fusion Unmatched Data
-path = "/yourPath/FusionNoMatchups/"
+path = "/yourPath/FusionUnmatched/"
 files = [os.path.join(path, file) for file in os.listdir(path)]
 fusion_raw = pd.concat((pd.read_csv(f, engine='python') for f in files if f.endswith('csv')), ignore_index=True)
 
@@ -131,5 +159,5 @@ for result in results:
     print('RESULTS:', result)
     
 
-pd.DataFrame(results).to_csv(r'/yourPath/' + experiment + '/tests/' + test + '/modelScores/'+ str(random_state) + '_' + experiment + '_' + test + '_modelScore.csv', index = False)
+pd.DataFrame(results).to_csv(r'/yourPath/' + str(random_state) + '_' + '_modelScore.csv', index = False)
 
