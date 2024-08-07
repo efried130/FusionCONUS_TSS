@@ -97,13 +97,14 @@ def col_log_transform(df, cols):
 
 
 
-def preprocess_dataframe(dataframe, thresholdTSS, pixelCount, cols_to_log):
+def preprocess_dataframe(dataframe, thresholdTSS, minThresholdTSS, pixelCount, cols_to_log):
     """
     Preprocess and clean fusion and LS2 matchup (training/testing) dataframes to prep for RF model.
 
     Parameters:
     df (pd.DataFrame): Input DataFrame.
     thresholdTSS: High TSS boundary to filter dataframe
+    minThresholdTSS: Low TSS boundary to filter dataframe
     pixelCount: The minimum number of pixels needed per image
     cols_to_log: The columns to be log transformed for RF input features
 
@@ -134,7 +135,7 @@ def preprocess_dataframe(dataframe, thresholdTSS, pixelCount, cols_to_log):
     #df = calc_hue(df)    
     
     #Remove outliers and set thresholds for TSS and pixelCounts
-    dfClean = df[(df.tss < thresholdTSS) & (df.R_GB < 2)& (df.B_RG < 2) & (df.B_RS < 5) & (df.BR_G > -5) & (df.units == 'mg/l') & (df.pixelCount >= pixelCount)]
+    dfClean = df[(df.tss < thresholdTSS) & (df.tss >= minThresholdTSS) & (df.R_GB < 2)& (df.B_RG < 2) & (df.B_RS < 5) & (df.BR_G > -5) & (df.units == 'mg/l') & (df.pixelCount >= pixelCount)]
     
     
     #Write it out
@@ -146,7 +147,7 @@ def preprocess_dataframe(dataframe, thresholdTSS, pixelCount, cols_to_log):
 def rf_prep_dataframe(df):
         """
     Prep fusion and LS2 dataframes to input in RF model.
-
+    
     Parameters:
     df (pd.DataFrame): Input DataFrame.
     
@@ -315,7 +316,7 @@ def predict_unmatched(df_name, rf, X_test, preds_prepped_df):
     
         
     preds_df_all['tssPred_log'] = rf.predict(pred_df)
-    preds_df_all['tssPred'] = 10**(preds_df_all['tssPred_log'])
+    preds_df_all['tssPred'] = round(10**(preds_df_all['tssPred_log']))
     preds_df_all['Experiment'] = df_name
     preds_df_all['test'] = test
     preds_df_all['RandomState'] = random_state
@@ -407,8 +408,8 @@ def run_random_forest(dfs, train_size, random_state, ls2prep, fusion_prep):
         # Predict on the test set and then save it out for figures later
         
         test_df_all['tssPred_log'] = rf.predict(X_test)
-        test_df_all['tssPred'] = round(10**(test_df_all['tssPred_log']), 4)
-        test_df_all['tss'] = round(10**(test_df_all['tss_log']), 4)
+        test_df_all['tssPred'] = round(10**(test_df_all['tssPred_log']))
+        test_df_all['tss'] = round(10**(test_df_all['tss_log']))
         test_df_all['Experiment'] = df_name
         test_df_all['test'] = test
         test_df_all['RandomState'] = random_state
@@ -416,7 +417,8 @@ def run_random_forest(dfs, train_size, random_state, ls2prep, fusion_prep):
         #Save the test set for checking your work/custom evaluation and figures
         test_df_all.to_csv('/yourPath/' + experiment +'/' + stage + '/'+ test +'/testSets/' + experiment + '_' + test + '_' + df_name + '_' + str(random_state) +  '_testSet.csv', index=False)
        
-        
+        prediction = test_df_all['tssPred_log'].to_numpy()
+
         #METRICS
         #RMSE
         RMSE_model = np.sqrt(mean_squared_error(10**(y_test), 10**(prediction)))
@@ -509,11 +511,15 @@ def run_random_forest(dfs, train_size, random_state, ls2prep, fusion_prep):
         
         
 #         #LS2 PREDICTION
-        merged_pred_ls2 = predict_unmatched(df_name = df_name, rf = rf, X_test = X_test, preds_prepped_df = ls2_prep)
+        pred_ls2 = predict_unmatched(df_name = df_name, rf = rf, X_test = X_test, preds_prepped_df = ls2_prep)
+        test_df_all_merge = test_df_all[pred_ls2.columns]
+        merged_pred_ls2 = pd.concat([pred_ls2, test_df_all_merge])
         merged_pred_ls2.to_csv('/yourPath/' + experiment +'/' + stage + '/'+ test +'/modelPreds_ls2/' + str(random_state) + '_' + df_name  + '_ls2Preds.csv', index=False)
         
         #FUSION PREDICTION
-        merged_pred_fusion = predict_unmatched(df_name = df_name, rf = rf, X_test = X_test, preds_prepped_df = fusion_prep)
+        pred_fusion = predict_unmatched(df_name = df_name, rf = rf, X_test = X_test, preds_prepped_df = fusion_prep)
+        test_df_all_merge = test_df_all[pred_fusion.columns]
+        merged_pred_fusion = pd.concat([pred_fusion, test_df_all_merge])
         merged_pred_fusion.to_csv('/yourPath/' + experiment +'/' + stage + '/'+ test +'/modelPreds_fusion/' + str(random_state) + '_' + df_name  + '_fusionPreds.csv', index=False)
         
 
