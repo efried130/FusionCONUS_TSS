@@ -335,7 +335,7 @@ def fusionExport(fcList, dates, generalFilePath, identifier, siteNum, chunkCount
 
                 #print(results.getInfo())
 
-                filepath =  generalFilePath + str(i) + '_' + str(chunkCount) + '_' + startDate + '-' + endDate + '_' + str(identifier) + '.csv'
+                filepath =  generalFilePath + str(chunkCount) +'_'+ str(i) + '_' + startDate + '-' + endDate + '_' + str(identifier) + '.csv'
                 geemap.ee_export_vector(ee_object = ee.FeatureCollection(results), filename = filepath, selectors = ['SiteID','date','blue', 'green', 'red', 'nir', 'swir1', 'swir2', 'pixelCount',
                                     'blue_sd', 'green_sd', 'red_sd', 'nir_sd', 'swir1_sd', 'swir2_sd'])
             
@@ -362,7 +362,7 @@ def fusionExport(fcList, dates, generalFilePath, identifier, siteNum, chunkCount
                 #print('Polling for task (id: {}).'.format(task.id), i, startDate, endDate, str(identifier), str(siteSpan))
                 #time.sleep(5)
             
-            print('done', i, startDate, endDate, str(identifier))
+            print('done', chunkCount, i, startDate, endDate, str(identifier))
             time.sleep(5)
 
 
